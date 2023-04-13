@@ -1,0 +1,3 @@
+*.odb
+__pycache__/
+*.db
