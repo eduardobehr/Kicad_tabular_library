@@ -8,24 +8,35 @@ import argparse
 from os.path import isfile
 from common import Color, KicadSymbol
 
-argparser = argparse.ArgumentParser(
-    prog=f'./{argv[0]}',
-    description='Kicad Library to SQLite3 Database converter',
-    add_help=False,
-)
-
 SUPPORTED_KICAD_EXTENSIONS = ('.kicad_sym',)
 SUPPORTED_DB_EXTENSIONS = ('.db',)
 
-argparser.add_argument('source_file', help=f'Kicad library file {SUPPORTED_KICAD_EXTENSIONS}')
-argparser.add_argument('target_file', help='Database file')
-argparser.add_argument('-h', '--help', action='store_true')
+example = f"""example:\n
+To convert the Kicad library to a database:
+  python {argv[0]}  mylib.kicad_sym  mydb.db
+
+To convert a database back to the Kicad library:
+  python {argv[0]}  mydb.db  mylib.kicad_sym
+"""
+
+argparser = argparse.ArgumentParser(
+    prog=f'./{argv[0]}',
+    description='Kicad Library to/from SQLite3 Database converter.'
+        +'Input and output files can be '
+        +f'{SUPPORTED_KICAD_EXTENSIONS} and {SUPPORTED_DB_EXTENSIONS}'
+        +' and vice-versa (although not the same on both ends).',
+    epilog=example,
+    formatter_class=argparse.RawTextHelpFormatter
+)
+
+
+
+argparser.add_argument('source_file', help=f'Kicad library or SQLite database')
+argparser.add_argument('target_file', help='SQLite database or Kicad library')
 argparser.add_argument('-v', '--verbose', action='store_true')
 
+
 args = argparser.parse_args()
-if args.help:
-    argparser.print_help()
-    exit(0)
 
 def verbose(*a, **kwa):
     if args.verbose:
