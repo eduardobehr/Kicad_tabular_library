@@ -7,6 +7,7 @@ from sys import argv
 import argparse
 from os.path import isfile
 from common import Color, KicadSymbol
+from math import nan, isnan
 
 SUPPORTED_KICAD_EXTENSIONS = ('.kicad_sym',)
 SUPPORTED_DB_EXTENSIONS = ('.db',)
@@ -143,6 +144,40 @@ def db_to_kicad(source_file, target_file):
 
                                             any_change = True
                                             print("  OK")
+
+                        for db_field in db_symbol:
+                            element_fields = [f[1] for f in element if str(f[0]) == "property"]
+                            new_value = db_symbol[db_field]
+
+                            if db_field not in element_fields and db_field != "Name":
+                                print(f"New property '{db_field}' for symbol '{name}'")
+                                if isnan(new_value) or new_value == "":
+                                    print(f"  '{db_field}' has no value: {new_value}")
+                                    continue
+
+
+                                ans = input(Color.YELLOW + f"  New value is '{new_value}'. Add new property?" + Color.RESET + " [Y/N]\n  ")
+
+                                if ans in ('Y', 'y', 's', 'S'):
+                                    last_id = [f[3][1] for f in element if str(f[0]) == 'property' if str(f[3][0]) == 'id'][-1]
+                                    new_id = last_id + 1
+                                    new_property = [
+                                        Symbol('property'),
+                                        db_field,               # name
+                                        str(db_symbol[db_field]),    # value # FIXME: make string instead of number
+                                        [Symbol('id'), new_id],
+                                        [Symbol('at'), 0, 0, 0],
+                                        [Symbol('effects'),
+                                            [Symbol('font'),
+                                                [Symbol('size'), 1.27, 1.27]
+                                            ],
+                                            Symbol('hide')
+                                        ],
+                                    ]
+
+                                    model[j].append(new_property)
+                                    any_change = True
+                                    print("  OK")
 
             if any_change:
                 with open(target_file, 'w') as kicad_lib_file:
