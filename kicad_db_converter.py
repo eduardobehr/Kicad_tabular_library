@@ -34,8 +34,8 @@ argparser = argparse.ArgumentParser(
 
 argparser.add_argument('source_file', help=f'Kicad library or SQLite database')
 argparser.add_argument('target_file', help='SQLite database or Kicad library')
-argparser.add_argument('-v', '--verbose', action='store_true')
-
+argparser.add_argument('-v', '--verbose', help="Describe detailed actions while processing", action='store_true')
+argparser.add_argument('-y', '--yes', help="Say 'yes' to all changes prompts", action='store_true')
 
 args = argparser.parse_args()
 
@@ -133,11 +133,14 @@ def db_to_kicad(source_file, target_file):
 
                                 if field in db_symbol:
                                     old_value = str(subelement[2])
-                                    new_value = db_symbol[field]
+                                    new_value = str(db_symbol[field])
                                     if old_value != new_value:
                                         print(f"Property '{field}' changed for symbol '{name}'")
                                         print(Color.RED + f" -Old value: {old_value}\n" + Color.GREEN + f" +New Value: {new_value}" + Color.RESET)
-                                        ans = input(Color.YELLOW + "\n  Proceed with change?" + Color.RESET + " [Y/N]\n  ")
+                                        
+                                        ans: str = 'Y'
+                                        if not args.yes:
+                                            ans = input(Color.YELLOW + "\n  Proceed with change?" + Color.RESET + " [Y/N]\n  ")
 
                                         if ans in ('Y', 'y', 's', 'S'):
                                             model[j][k][2] = new_value
@@ -147,16 +150,17 @@ def db_to_kicad(source_file, target_file):
 
                         for db_field in db_symbol:
                             element_fields = [f[1] for f in element if str(f[0]) == "property"]
-                            new_value = db_symbol[db_field]
+                            new_value = str(db_symbol[db_field])
 
                             if db_field not in element_fields and db_field != "Name":
                                 print(f"New property '{db_field}' for symbol '{name}'")
-                                if isnan(new_value) or new_value == "":
+                                if (new_value.isdigit() and isnan(float(new_value))) or new_value == "":
                                     print(f"  '{db_field}' has no value: {new_value}")
                                     continue
 
-
-                                ans = input(Color.YELLOW + f"  New value is '{new_value}'. Add new property?" + Color.RESET + " [Y/N]\n  ")
+                                ans: str = 'Y'
+                                if not args.yes:
+                                    ans = input(Color.YELLOW + f"  New value is '{new_value}'. Add new property?" + Color.RESET + " [Y/N]\n  ")
 
                                 if ans in ('Y', 'y', 's', 'S'):
                                     last_id = [f[3][1] for f in element if str(f[0]) == 'property' if str(f[3][0]) == 'id'][-1]
